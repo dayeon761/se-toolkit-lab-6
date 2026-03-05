@@ -344,4 +344,4 @@ We refer to your fork as `fork` and to the original repo as `upstream` (выше
 
 ----
 
-🎉 Congrats! You are done with the setup! Now the tasks should go smoothly.
+🎉 Congrats! You are done with the setup! Now the tasks should go smoothly. Go to [tasks](https://github.com/inno-se-toolkit/se-toolkit-lab-5/tree/main?tab=readme-ov-file#tasks).
