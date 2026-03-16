@@ -145,5 +145,62 @@ Check OpenRouter service status
 
 Ensure model name is correct
 
+## Task 2: Documentation Agent with Tool Calling
+
+### New Features
+- **Tool Calling**: Agent can now use tools to interact with the file system
+- **Agentic Loop**: Automatically calls tools and processes results until answer is found
+- **Source Tracking**: Output includes source file reference
+
+### Available Tools
+
+#### 1. `list_files(path)`
+- Lists files and directories at specified path
+- Used to discover wiki documentation
+- Example: `list_files("wiki")`
+
+#### 2. `read_file(path)`
+- Reads contents of a file
+- Used to read wiki documentation
+- Example: `read_file("wiki/git-workflow.md")`
+
+### Security Features
+- Path traversal protection (blocks `..`)
+- Files outside project root are inaccessible
+- File size limits (1MB max)
+
+### Agentic Loop
+1. Send question + tool definitions to LLM
+2. If LLM requests tools → execute them, add results to conversation
+3. Repeat up to 10 times
+4. When LLM gives final answer → output JSON with answer, source, and tool_calls
+
+### Output Format
+```json
+{
+  "answer": "The answer to your question",
+  "source": "wiki/git-workflow.md#resolving-merge-conflicts",
+  "tool_calls": [
+    {
+      "tool": "list_files",
+      "args": {"path": "wiki"},
+      "result": "git-workflow.md\n..."
+    }
+  ]
+}
+
+Usage Examples
+bash
+# Ask about merge conflicts
+uv run agent.py "How do you resolve a merge conflict?"
+
+# Explore wiki
+uv run agent.py "What documentation is available?"
+Testing
+Run the Task 2 tests:
+
+bash
+python3 tests/test_agent_task2.py
+
 Version History
 Task 1: Basic question-answering agent with JSON output
