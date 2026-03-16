@@ -1,22 +1,22 @@
 # Agent Documentation
 
 ## Overview
-This is a simple CLI agent that answers questions using an LLM via OpenAI-compatible API. It serves as the foundation for more complex agents in subsequent tasks.
+This is a simple CLI agent that answers questions using an LLM via OpenRouter API. It serves as the foundation for more complex agents in subsequent tasks.
 
 ## LLM Provider
 - **Provider**: OpenRouter (https://openrouter.ai)
-- **Model**: `qwen/qwen3-coder:free`
+- **Model**: `google/gemma-3-12b-it:free`
 - **Why**: 
   - Works from Russia without VPN
   - 1000 free requests per day
   - Supports OpenAI-compatible API
-  - Good performance for coding tasks
+  - Good balance of speed and quality
 
 ## Configuration
 The agent reads configuration from `.env.agent.secret` file in the project root:
-LLM_API_KEY=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
+LLM_API_KEY=your-api-key-here
 LLM_API_BASE=https://openrouter.ai/api/v1
-LLM_MODEL=qwen/qwen3-coder:free
+LLM_MODEL=google/gemma-3-12b-it:free
 
 text
 
@@ -55,7 +55,7 @@ The agent outputs a single JSON line to stdout with the following structure:
 json
 {
   "answer": "string - the LLM's response to the question",
-  "tool_calls": []  // empty array for Task 1, will contain tool calls in later tasks
+  "tool_calls": []  // empty array for Task 1
 }
 Rules
 Only valid JSON goes to stdout
@@ -102,31 +102,20 @@ main(): Entry point, handles command line arguments
 
 call_llm(): Async function to communicate with LLM API
 
-log_debug()/log_error(): Helper functions for stderr output
+log_error(): Helper function for stderr output
 
 Testing
-Run the regression tests:
+Run the regression test:
 
 bash
-python tests/test_agent.py
-Tests verify:
+python3 tests/test_agent.py
+The test verifies:
 
 Valid JSON output with required fields
 
 Proper error handling for missing questions
 
 Non-empty answers
-
-Future Improvements (Tasks 2-3)
-Add tool calling support
-
-Implement system agent with domain knowledge
-
-Add documentation agent capabilities
-
-Enhance prompt engineering
-
-Add more comprehensive tests
 
 Troubleshooting
 Common Issues
@@ -158,7 +147,3 @@ Ensure model name is correct
 
 Version History
 Task 1: Basic question-answering agent with JSON output
-
-Task 2: Will add tool calling capabilities
-
-Task 3: Will implement specialized agents

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Simple LLM agent that answers questions using OpenAI-compatible API.
-Reads configuration from .env.agent.secret
+Simple LLM agent for Task 1
+Calls OpenRouter API and returns JSON response
 """
 
 import os
@@ -10,7 +10,6 @@ import json
 import httpx
 from dotenv import load_dotenv
 import asyncio
-from typing import Optional, Dict, Any
 
 # Load environment variables
 load_dotenv('.env.agent.secret')
@@ -18,21 +17,15 @@ load_dotenv('.env.agent.secret')
 # Configuration
 API_KEY = os.getenv('LLM_API_KEY')
 API_BASE = os.getenv('LLM_API_BASE', 'https://openrouter.ai/api/v1')
-MODEL = os.getenv('LLM_MODEL', 'qwen/qwen3-coder:free')
-TIMEOUT = 55  # seconds (leave buffer for 60s limit)
-
-def log_debug(msg: str) -> None:
-    """Print debug messages to stderr"""
-    print(f"[DEBUG] {msg}", file=sys.stderr)
+MODEL = os.getenv('LLM_MODEL', 'google/gemma-3-12b-it:free')
+TIMEOUT = 55
 
 def log_error(msg: str) -> None:
     """Print error messages to stderr"""
     print(f"[ERROR] {msg}", file=sys.stderr)
 
-async def call_llm(question: str) -> Optional[Dict[str, Any]]:
-    """
-    Call LLM API and return response
-    """
+async def call_llm(question: str) -> dict | None:
+    """Call LLM API and return response"""
     if not API_KEY:
         log_error("LLM_API_KEY not set in .env.agent.secret")
         return None
@@ -49,14 +42,13 @@ async def call_llm(question: str) -> Optional[Dict[str, Any]]:
         "max_tokens": 500
     }
     
-    url = f"{API_BASE}/chat/completions"
-    
     async with httpx.AsyncClient(timeout=TIMEOUT) as client:
         try:
-            log_debug(f"Sending request to {url}")
-            log_debug(f"Model: {MODEL}")
-            
-            response = await client.post(url, json=payload, headers=headers)
+            response = await client.post(
+                f"{API_BASE}/chat/completions",
+                json=payload,
+                headers=headers
+            )
             response.raise_for_status()
             
             data = response.json()
@@ -72,24 +64,20 @@ async def call_llm(question: str) -> Optional[Dict[str, Any]]:
             log_error(f"Response: {e.response.text}")
             return None
         except Exception as e:
-            log_error(f"Unexpected error: {str(e)}")
+            log_error(f"Error: {str(e)}")
             return None
 
 async def main():
     """Main entry point"""
-    # Check command line arguments
     if len(sys.argv) < 2:
         log_error("Usage: uv run agent.py \"your question here\"")
         sys.exit(1)
     
     question = sys.argv[1]
-    log_debug(f"Question: {question}")
     
-    # Call LLM
     result = await call_llm(question)
     
     if result:
-        # Output JSON to stdout
         print(json.dumps(result))
         sys.exit(0)
     else:
