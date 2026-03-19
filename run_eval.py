@@ -67,7 +67,7 @@ class AgentOutput(TypedDict, total=False):
 
 def _load_env():
     """Load variables from .env file (simple key=value parser)."""
-    for env_file in [".env", ".env.docker.secret"]:
+    for env_file in [".env", ".env.docker.secret", ".env.agent.secret"]:
         path = Path(env_file)
         if not path.exists():
             continue
@@ -126,17 +126,18 @@ def _fetch_question(api_url: str, auth: str, lab: str, index: int) -> Question |
         sys.exit(1)
 
 
-def _run_agent(question: str, timeout: int = 60) -> tuple[AgentOutput, None] | tuple[None, str]:
+def _run_agent(question: str, timeout: int = 120) -> tuple[AgentOutput, None] | tuple[None, str]:
     """Run agent.py with the question. Returns (answer_dict, error_msg)."""
     try:
+        # Use 'uv run' to ensure proper environment loading
         result = subprocess.run(
-            [sys.executable, "agent.py", question],
+            ["uv", "run", "agent.py", question],
             capture_output=True,
             text=True,
             timeout=timeout,
         )
     except subprocess.TimeoutExpired:
-        return None, "Agent timed out (60s)"
+        return None, f"Agent timed out ({timeout}s)"
     except FileNotFoundError:
         return None, "agent.py not found"
 
@@ -227,8 +228,12 @@ def _check_question(q: Question, data: AgentOutput) -> tuple[bool, str]:
     Returns (passed, failure_reason). failure_reason is empty on pass.
     Checks: (1) answer keywords, (2) source reference, (3) tool usage.
     """
-    answer = data.get("answer", "")
+    answer = data.get("answer") or ""
     expected = q.get("expected", {})
+
+    # Handle empty answer
+    if not answer:
+        return False, "    Empty answer from agent"
 
     # Check answer
     if expected:
@@ -302,11 +307,11 @@ def main():
 
         assert data is not None
         passed, reason = _check_question(q, data)
-        answer = data.get("answer", "")
+        answer = data.get("answer") or ""
         source = data.get("source", "")
         tool_calls = data.get("tool_calls", [])
 
-        print(f"  Answer: {answer[:200]}")
+        print(f"  Answer: {(answer or '')[:200]}")
         if source:
             print(f"  Source: {source}")
         if tool_calls:
@@ -357,9 +362,9 @@ def main():
             passed += 1
             index += 1
         else:
-            answer = data.get("answer", "")
+            answer = data.get("answer") or ""
             print(f"\n  {RED}x [{index + 1}/{total}] {question}{RESET}")
-            print(f"    Your answer: {answer[:200]}")
+            print(f"    Your answer: {(answer or '')[:200]}")
             print(reason)
             print(f"\n{BOLD}{passed}/{total} passed{RESET}")
             sys.exit(1)
